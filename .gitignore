@@ -1,0 +1,11 @@
+# Android Studio
+*.iml
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+
+# Node.js
+node_modules/
+.env
