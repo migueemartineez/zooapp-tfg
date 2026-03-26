@@ -1,2 +1,9 @@
-# zooapp-tfg
-Aplicación Android para un zoológico inteligente usando beacons BLE simulados y registro de actividad de usuarios.
+# 🐾 ZooApp TFG
+
+Aplicación Android para un zoológico inteligente usando Beacons BLE para ofrecer información contextual a los visitantes.
+
+## Tecnologías
+- Kotlin + Jetpack Compose
+- Node.js + Express
+- MongoDB
+- AltBeacon
