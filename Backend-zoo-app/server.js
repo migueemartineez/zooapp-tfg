@@ -14,15 +14,19 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ Conectado a MongoDB'))
   .catch((err) => console.error('❌ Error al conectar a MongoDB:', err));
 
-// Ruta basica de prueba (se podria borrar)
+// Ruta básica de prueba
 app.get('/', (req, res) => {
-    res.send('¡Servidor funcionando!');
+    res.send('¡Servidor ZooApp funcionando!');
 });
 
-// Rutas de usuarios (POST y GET)
+// Rutas
 const userRoutes = require('./routes/userRoutes');
-app.use('/api/users', userRoutes);
+const zonaRoutes = require('./routes/zonaRoutes');
+const animalRoutes = require('./routes/animalRoutes');
 
+app.use('/api/users', userRoutes);
+app.use('/api/zonas', zonaRoutes);
+app.use('/api/animales', animalRoutes);
 
 // Puerto del servidor
 const PORT = process.env.PORT || 5000;
