@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
                         PantallaLogin(onLoginExitoso = {
                             // Iniciar beacons al entrar al mapa
                             beaconService = BeaconService(this@MainActivity) { zona ->
-                                zonaActual = zona
+                                zonaActual = zona ?: ""
                             }
                             beaconService.iniciar()
                             navController.navigate("mapa")

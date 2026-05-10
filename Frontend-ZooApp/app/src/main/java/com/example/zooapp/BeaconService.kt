@@ -5,16 +5,18 @@ import org.altbeacon.beacon.*
 
 class BeaconService(
     private val context: Context,
-    private val onZonaDetectada: (String) -> Unit
+    private val onZonaDetectada: (String?) -> Unit
 ) : BeaconConsumer {
 
     private lateinit var beaconManager: BeaconManager
     private val region = Region("zoo-region", null, null, null)
+    private var ultimaDeteccion: Long = 0
+    private val timeWindowMillis  = 8000L // 5 segundos
 
     fun iniciar() {
         beaconManager = BeaconManager.getInstanceForApplication(context)
         beaconManager.beaconParsers.add(
-            BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24") // iBeacon
+            BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24")
         )
         beaconManager.bind(this)
     }
@@ -37,7 +39,13 @@ class BeaconService(
                     Pair(3, 1) -> "zona-aves"
                     else -> null
                 }
-                zona?.let { onZonaDetectada(it) }
+                ultimaDeteccion = System.currentTimeMillis()
+                onZonaDetectada(zona)
+            } else {
+                val ahora = System.currentTimeMillis()
+                if (ahora - ultimaDeteccion > timeWindowMillis) {
+                    onZonaDetectada(null)
+                }
             }
         }
         try {
@@ -47,7 +55,7 @@ class BeaconService(
         }
     }
 
-    override fun getApplicationContext() = context.applicationContext
+    override fun getApplicationContext(): Context = context.applicationContext
     override fun unbindService(connection: android.content.ServiceConnection) =
         context.unbindService(connection)
     override fun bindService(intent: android.content.Intent, connection: android.content.ServiceConnection, flags: Int) =
