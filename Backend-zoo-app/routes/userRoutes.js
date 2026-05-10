@@ -5,14 +5,14 @@ const User = require('../models/User');
 // Registro de usuario
 router.post('/registro', async (req, res) => {
     try {
-        const { nombre, email, contraseña, preferencias } = req.body;
+        const { nombre, email, password, preferencias } = req.body;
 
         const existeUsuario = await User.findOne({ email });
         if (existeUsuario) {
             return res.status(400).json({ error: 'El email ya está registrado' });
         }
 
-        const nuevoUsuario = new User({ nombre, email, contraseña, preferencias });
+        const nuevoUsuario = new User({ nombre, email, password, preferencias });
         await nuevoUsuario.save();
         res.status(201).json({ mensaje: 'Usuario registrado correctamente', id: nuevoUsuario._id });
     } catch (error) {
@@ -23,8 +23,8 @@ router.post('/registro', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
     try {
-        const { email, contraseña } = req.body;
-        const usuario = await User.findOne({ email, contraseña });
+        const { email, password } = req.body;
+        const usuario = await User.findOne({ email, password });
         if (!usuario) {
             return res.status(401).json({ error: 'Email o contraseña incorrectos' });
         }
