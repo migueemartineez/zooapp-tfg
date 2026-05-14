@@ -1,12 +1,15 @@
 package com.example.zooapp
 
-import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.*
 
 data class LoginRequest(val email: String, val password: String)
 data class LoginResponse(val mensaje: String, val usuario: User)
 data class RegistroResponse(val mensaje: String, val id: String)
+data class VisitaRequest(
+    val zonasVisitadas: List<String>,
+    val animalesVistos: List<String>
+)
 
 interface ApiService {
 
@@ -19,6 +22,9 @@ interface ApiService {
 
     @GET("users/{id}")
     fun obtenerUsuario(@Path("id") id: String): Call<User>
+
+    @POST("users/{id}/visita")
+    fun anadirVisita(@Path("id") id: String, @Body visita: VisitaRequest): Call<User>
 
     @PUT("users/{id}/preferencias")
     fun actualizarPreferencias(@Path("id") id: String, @Body preferencias: Preferencias): Call<User>
@@ -33,4 +39,7 @@ interface ApiService {
 
     @GET("animales/zona/{zonaId}")
     fun obtenerAnimalesPorZona(@Path("zonaId") zonaId: String): Call<List<Animal>>
+
+    @GET("animales/{id}")
+    fun obtenerAnimalPorId(@Path("id") id: String): Call<Animal>
 }

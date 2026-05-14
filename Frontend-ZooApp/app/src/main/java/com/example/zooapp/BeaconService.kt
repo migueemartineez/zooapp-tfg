@@ -11,13 +11,17 @@ class BeaconService(
     private lateinit var beaconManager: BeaconManager
     private val region = Region("zoo-region", null, null, null)
     private var ultimaDeteccion: Long = 0
-    private val timeWindowMillis  = 8000L // 5 segundos
+    private val timeWindowMillis = 15000L
 
     fun iniciar() {
         beaconManager = BeaconManager.getInstanceForApplication(context)
         beaconManager.beaconParsers.add(
             BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24")
         )
+        beaconManager.setEnableScheduledScanJobs(false)
+        beaconManager.setBackgroundMode(false)
+        beaconManager.foregroundScanPeriod = 1100L
+        beaconManager.foregroundBetweenScanPeriod = 0L
         beaconManager.bind(this)
     }
 
@@ -32,11 +36,11 @@ class BeaconService(
                 val major = beacon.id2.toInt()
                 val minor = beacon.id3.toInt()
                 val zona = when (Pair(major, minor)) {
-                    Pair(1, 1) -> "zona-africa"
-                    Pair(1, 2) -> "zona-madagascar"
-                    Pair(2, 1) -> "zona-asia"
-                    Pair(2, 2) -> "zona-reptiles"
-                    Pair(3, 1) -> "zona-aves"
+                    Pair(1, 1) -> "Isla de Madagascar"
+                    Pair(1, 2) -> "África Ecuatorial"
+                    Pair(2, 1) -> "Sudeste Asiático"
+                    Pair(2, 2) -> "Indo Pacífico"
+                    Pair(3, 1) -> "Centro y Sudamérica"
                     else -> null
                 }
                 ultimaDeteccion = System.currentTimeMillis()
