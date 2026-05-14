@@ -10,6 +10,9 @@ data class VisitaRequest(
     val zonasVisitadas: List<String>,
     val animalesVistos: List<String>
 )
+data class PreferenciasRequest(
+    val preferencias: Preferencias
+)
 
 interface ApiService {
 
@@ -27,7 +30,7 @@ interface ApiService {
     fun anadirVisita(@Path("id") id: String, @Body visita: VisitaRequest): Call<User>
 
     @PUT("users/{id}/preferencias")
-    fun actualizarPreferencias(@Path("id") id: String, @Body preferencias: Preferencias): Call<User>
+    fun actualizarPreferencias(@Path("id") id: String, @Body preferencias: PreferenciasRequest): Call<User>
 
     // Zonas
     @GET("zonas")

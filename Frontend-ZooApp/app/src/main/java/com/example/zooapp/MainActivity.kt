@@ -137,7 +137,7 @@ class MainActivity : ComponentActivity() {
                             PantallaAnimales(navController = navController)
                         }
                         composable("rutas") {
-                            PantallaRutas(navController = navController)
+                            PantallaRutas(navController = navController, timestamp = SesionUsuario.rutasTimestamp)
                         }
                         composable("logros") {
                             PantallaLogros()

@@ -11,22 +11,27 @@ class BeaconService(
     private lateinit var beaconManager: BeaconManager
     private val region = Region("zoo-region", null, null, null)
     private var ultimaDeteccion: Long = 0
-    private val timeWindowMillis = 15000L
+    private val timeWindowMillis = 5000L // Tiempo en ms
 
     fun iniciar() {
         beaconManager = BeaconManager.getInstanceForApplication(context)
-        beaconManager.beaconParsers.add(
-            BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24")
-        )
-        beaconManager.setEnableScheduledScanJobs(false)
-        beaconManager.setBackgroundMode(false)
-        beaconManager.foregroundScanPeriod = 1100L
-        beaconManager.foregroundBetweenScanPeriod = 0L
+
+        if (beaconManager.beaconParsers.isEmpty()) {
+            beaconManager.beaconParsers.add(
+                BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24")
+            )
+            beaconManager.setEnableScheduledScanJobs(false)
+            beaconManager.setBackgroundMode(false)
+            beaconManager.foregroundScanPeriod = 1100L
+            beaconManager.foregroundBetweenScanPeriod = 0L
+        }
+
         beaconManager.bind(this)
     }
 
     fun detener() {
         beaconManager.unbind(this)
+        SesionUsuario.beaconIniciado = false
     }
 
     override fun onBeaconServiceConnect() {

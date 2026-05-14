@@ -22,18 +22,16 @@ fun PantallaPerfil(navController: NavController) {
     var usuarioActualizado by remember { mutableStateOf(usuario) }
     var mensajePreferencias by remember { mutableStateOf("") }
 
-    // Preferencias seleccionadas (se cargan desde el usuario guardado)
-    var tipoAnimalSeleccionado by remember { mutableStateOf(
-        usuario?.preferencias?.tipoAnimal?.firstOrNull() ?: ""
+    // Preferencias seleccionadas
+    var tiposSeleccionados by remember { mutableStateOf(
+        usuario?.preferencias?.tipoAnimal ?: emptyList()
     )}
     var especiesEnPeligro by remember { mutableStateOf(
         usuario?.preferencias?.interesTematico?.contains("Especies en peligro") ?: false
     )}
 
-    // Opciones disponibles
     val tiposAnimal = listOf("Mamíferos", "Reptiles", "Aves", "Animales acuáticos")
 
-    // Cargar usuario actualizado al entrar al perfil
     LaunchedEffect(Unit) {
         val id = usuario?._id
         if (id != null) {
@@ -42,10 +40,8 @@ fun PantallaPerfil(navController: NavController) {
                     override fun onResponse(call: Call<User>, response: Response<User>) {
                         val userActualizado = response.body()
                         usuarioActualizado = userActualizado
-                        // Actualizar preferencias con los datos del servidor
-                        tipoAnimalSeleccionado = userActualizado?.preferencias?.tipoAnimal?.firstOrNull() ?: ""
+                        tiposSeleccionados = userActualizado?.preferencias?.tipoAnimal ?: emptyList()
                         especiesEnPeligro = userActualizado?.preferencias?.interesTematico?.contains("Especies en peligro") ?: false
-                        // Actualizar sesión
                         SesionUsuario.usuario = userActualizado
                     }
                     override fun onFailure(call: Call<User>, t: Throwable) {}
@@ -83,8 +79,9 @@ fun PantallaPerfil(navController: NavController) {
             Button(
                 onClick = {
                     SesionUsuario.usuario = null
+                    SesionUsuario.ultimaZonaGuardada = ""
                     navController.navigate("login") {
-                        popUpTo(0)
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
@@ -104,9 +101,15 @@ fun PantallaPerfil(navController: NavController) {
             Text("Tipo de animal favorito", style = MaterialTheme.typography.labelMedium)
             tiposAnimal.forEach { tipo ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = tipoAnimalSeleccionado == tipo,
-                        onClick = { tipoAnimalSeleccionado = tipo }
+                    Checkbox(
+                        checked = tipo in tiposSeleccionados,
+                        onCheckedChange = { checked ->
+                            tiposSeleccionados = if (checked) {
+                                tiposSeleccionados + tipo
+                            } else {
+                                tiposSeleccionados - tipo
+                            }
+                        }
                     )
                     Text(tipo)
                 }
@@ -128,19 +131,22 @@ fun PantallaPerfil(navController: NavController) {
 
             Button(
                 onClick = {
-                    val id = usuario?._id
+                    val id = usuarioActualizado?._id ?: usuario?._id
                     if (id != null) {
-                        val preferencias = Preferencias(
-                            ecosistema = emptyList(),
-                            tipoAnimal = if (tipoAnimalSeleccionado.isNotEmpty()) listOf(tipoAnimalSeleccionado) else emptyList(),
-                            interesTematico = if (especiesEnPeligro) listOf("Especies en peligro") else emptyList()
+                        val preferenciasRequest = PreferenciasRequest(
+                            preferencias = Preferencias(
+                                ecosistema = emptyList(),
+                                tipoAnimal = tiposSeleccionados,
+                                interesTematico = if (especiesEnPeligro) listOf("Especies en peligro") else emptyList()
+                            )
                         )
-                        RetrofitClient.instance.actualizarPreferencias(id, preferencias)
+                        RetrofitClient.instance.actualizarPreferencias(id, preferenciasRequest)
                             .enqueue(object : Callback<User> {
                                 override fun onResponse(call: Call<User>, response: Response<User>) {
                                     if (response.isSuccessful) {
                                         mensajePreferencias = "Preferencias guardadas correctamente"
                                         SesionUsuario.usuario = response.body()
+                                        SesionUsuario.rutasTimestamp = System.currentTimeMillis()
                                     }
                                 }
                                 override fun onFailure(call: Call<User>, t: Throwable) {
@@ -182,7 +188,6 @@ fun PantallaPerfil(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Barra de progreso de zonas
             LinearProgressIndicator(
                 progress = { zonasUnicas.size / 5f },
                 modifier = Modifier.fillMaxWidth()
