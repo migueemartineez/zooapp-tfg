@@ -15,6 +15,49 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+// Agrupa el historial por día y devuelve un mapa fecha → zonas únicas
+private fun agruparHistorialPorDia(
+    historial: List<Map<String, Any>>
+): Map<String, Set<String>> {
+    val mapa = mutableMapOf<String, MutableSet<String>>()
+    historial.forEach { visita ->
+        val fecha = visita["fecha"]?.toString()?.take(10) ?: return@forEach
+        val zonas = (visita["zonasVisitadas"] as? List<*>)
+            ?.filterIsInstance<String>()
+            ?.filter { it.isNotEmpty() }
+            ?: emptyList()
+        if (!mapa.containsKey(fecha)) {
+            mapa[fecha] = mutableSetOf()
+        }
+        mapa[fecha]!!.addAll(zonas)
+    }
+    return mapa.toSortedMap(reverseOrder())
+}
+
+// Convierte "2026-05-15" en día, mes y año por separado
+private fun parsearFecha(fecha: String): Triple<String, String, String> {
+    val partes = fecha.split("-")
+    if (partes.size != 3) return Triple("", "", "")
+    val anyo = partes[0]
+    val mes = when (partes[1]) {
+        "01" -> "Ene"
+        "02" -> "Feb"
+        "03" -> "Mar"
+        "04" -> "Abr"
+        "05" -> "May"
+        "06" -> "Jun"
+        "07" -> "Jul"
+        "08" -> "Ago"
+        "09" -> "Sep"
+        "10" -> "Oct"
+        "11" -> "Nov"
+        "12" -> "Dic"
+        else -> ""
+    }
+    val dia = partes[2]
+    return Triple(dia, mes, anyo)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaPerfil(navController: NavController) {
@@ -22,7 +65,6 @@ fun PantallaPerfil(navController: NavController) {
     var usuarioActualizado by remember { mutableStateOf(usuario) }
     var mensajePreferencias by remember { mutableStateOf("") }
 
-    // Preferencias seleccionadas
     var tiposSeleccionados by remember { mutableStateOf(
         usuario?.preferencias?.tipoAnimal ?: emptyList()
     )}
@@ -175,28 +217,25 @@ fun PantallaPerfil(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             val historial = usuarioActualizado?.historialVisitas ?: emptyList()
-            val zonasUnicas = historial.flatMap { visita ->
-                (visita["zonasVisitadas"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-            }.toSet()
-            val animalesUnicos = historial.flatMap { visita ->
-                (visita["animalesVistos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-            }.toSet()
+            val historialPorDia = agruparHistorialPorDia(historial)
 
-            Text("Zonas visitadas: ${zonasUnicas.size} de 5")
-            Text("Animales vistos: ${animalesUnicos.size}")
-            Text("Visitas totales: ${historial.size}")
+            val diasVisitados = historialPorDia.keys.size
+            val ultimaVisita = historialPorDia.keys.firstOrNull() ?: "-"
+            val (diaUlt, mesUlt, anyoUlt) = if (ultimaVisita != "-") parsearFecha(ultimaVisita) else Triple("-", "", "")
+            val ultimaVisitaFormateada = if (ultimaVisita != "-") "$diaUlt $mesUlt $anyoUlt" else "-"
 
-            Spacer(modifier = Modifier.height(8.dp))
+            val animalMasVisto = historial
+                .flatMap { visita ->
+                    (visita["animalesVistos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                }
+                .groupingBy { it }
+                .eachCount()
+                .maxByOrNull { it.value }
+                ?.key ?: "-"
 
-            LinearProgressIndicator(
-                progress = { zonasUnicas.size / 5f },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                text = "${zonasUnicas.size}/5 zonas completadas",
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            Text("Visitas al zoo: $diasVisitados")
+            Text("Última visita: $ultimaVisitaFormateada")
+            Text("Animal más visitado: $animalMasVisto")
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
@@ -204,21 +243,76 @@ fun PantallaPerfil(navController: NavController) {
             Text("Historial de visitas", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (historial.isEmpty()) {
+            if (historialPorDia.isEmpty()) {
                 Text("Aún no has visitado ninguna zona", style = MaterialTheme.typography.bodyMedium)
             } else {
-                historial.reversed().forEach { visita ->
-                    val zonas = (visita["zonasVisitadas"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-                    val fecha = visita["fecha"]?.toString()?.take(10) ?: ""
+                historialPorDia.forEach { (fecha, zonas) ->
+                    val (dia, mes, anyo) = parsearFecha(fecha)
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                            .padding(vertical = 4.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            0.5.dp,
+                            MaterialTheme.colorScheme.outlineVariant
+                        )
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(fecha, style = MaterialTheme.typography.labelMedium)
-                            zonas.forEach { zona ->
-                                Text("• $zona", style = MaterialTheme.typography.bodyMedium)
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Columna de fecha
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.width(36.dp)
+                            ) {
+                                Text(
+                                    text = dia,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = mes,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    text = anyo,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+
+                            // Divisor vertical
+                            HorizontalDivider(
+                                modifier = Modifier
+                                    .width(0.5.dp)
+                                    .height(48.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
+
+                            // Columna de info
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Visita al zoo",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                if (zonas.isNotEmpty()) {
+                                    Text(
+                                        text = zonas.joinToString(" · "),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
                             }
                         }
                     }

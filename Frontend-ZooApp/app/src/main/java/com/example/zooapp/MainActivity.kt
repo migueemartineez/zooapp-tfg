@@ -265,11 +265,13 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                                 SesionUsuario.ultimaZonaGuardada = zonaActual
                                 val visita = VisitaRequest(
                                     zonasVisitadas = listOf(zonaActual),
-                                    animalesVistos = animales.map { it.nombre }
+                                    animalesVistos = emptyList()
                                 )
                                 RetrofitClient.instance.anadirVisita(usuarioId, visita)
                                     .enqueue(object : Callback<User> {
-                                        override fun onResponse(call: Call<User>, response: Response<User>) {}
+                                        override fun onResponse(call: Call<User>, response: Response<User>) {
+                                            response.body()?.let { SesionUsuario.usuario = it }
+                                        }
                                         override fun onFailure(call: Call<User>, t: Throwable) {}
                                     })
                             }

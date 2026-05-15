@@ -28,6 +28,23 @@ fun PantallaDetalleAnimal(animalId: String, navController: NavController) {
                 override fun onResponse(call: Call<Animal>, response: Response<Animal>) {
                     animal = response.body()
                     cargando = false
+
+                    // Marcar animal como visto al abrir el detalle
+                    val usuarioId = SesionUsuario.usuario?._id
+                    val nombreAnimal = animal?.nombre
+                    if (usuarioId != null && nombreAnimal != null) {
+                        val visita = VisitaRequest(
+                            zonasVisitadas = emptyList(),
+                            animalesVistos = listOf(nombreAnimal)
+                        )
+                        RetrofitClient.instance.anadirVisita(usuarioId, visita)
+                            .enqueue(object : Callback<User> {
+                                override fun onResponse(call: Call<User>, response: Response<User>) {
+                                    response.body()?.let { SesionUsuario.usuario = it }
+                                }
+                                override fun onFailure(call: Call<User>, t: Throwable) {}
+                            })
+                    }
                 }
                 override fun onFailure(call: Call<Animal>, t: Throwable) {
                     cargando = false
