@@ -3,6 +3,7 @@ package com.example.zooapp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -10,8 +11,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -80,6 +84,20 @@ fun PantallaDetalleAnimal(animalId: String, navController: NavController) {
                     .verticalScroll(rememberScrollState())
             ) {
                 animal?.let { a ->
+                    // Imagen del animal
+                    if (!a.imagen.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = a.imagen,
+                            contentDescription = a.nombre,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
                     InfoItem(titulo = "Ecosistema", contenido = a.ecosistema)
                     InfoItem(titulo = "Tipo de animal", contenido = a.tipoAnimal.replaceFirstChar { it.uppercase() })
                     InfoItem(titulo = "Descripción", contenido = a.descripcion)
