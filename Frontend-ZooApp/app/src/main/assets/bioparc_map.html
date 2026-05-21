@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BioParc Mapa</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background: #F5F1E8;
+        }
+        #mapa-container {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+        svg {
+          width: 100%;
+          height: 100%;
+          max-width: 500px;
+          max-height: 100%;
+        }
+
+        .zona { cursor: pointer; }
+        .zona-fondo { transition: filter 0.3s ease, stroke-width 0.3s ease; }
+        .zona.activa .zona-fondo {
+          filter: drop-shadow(0 0 12px rgba(29,158,117,0.8));
+          stroke-width: 3.5;
+        }
+        .zona-label {
+          pointer-events: none;
+          font-size: 11px;
+          font-weight: 700;
+          text-anchor: middle;
+        }
+
+        .huella { cursor: pointer; }
+        .huella-bg { fill: white; stroke: #555; stroke-width: 1; }
+        .huella-icon {
+          pointer-events: none;
+          font-size: 11px;
+          text-anchor: middle;
+          dominant-baseline: middle;
+        }
+
+        .camino {
+          fill: none;
+          stroke: #C9A84C;
+          stroke-width: 4;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: 6, 4;
+          opacity: 0.6;
+        }
+
+        .entrada-label {
+          pointer-events: none;
+          font-size: 9px;
+          fill: #5A4020;
+          text-anchor: middle;
+          font-weight: 600;
+        }
+
+        .card {
+          position: fixed;
+          bottom: 16px;
+          left: 16px;
+          right: 16px;
+          background: white;
+          border-radius: 14px;
+          padding: 12px 14px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+          display: none;
+          animation: slideUp 0.25s ease;
+        }
+        .card.visible { display: block; }
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+
+        .card-row { display: flex; align-items: center; gap: 12px; }
+        .card-img {
+          width: 60px;
+          height: 60px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #E8D5F5, #D5E8FA);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          flex-shrink: 0;
+        }
+        .card-info { flex: 1; min-width: 0; }
+        .card-nombre {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1a1a1a;
+          margin-bottom: 2px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .card-zona { font-size: 11px; color: #888; margin-bottom: 6px; }
+        .card-btn {
+          background: #1D9E75;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 6px 12px;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+        .card-close {
+          position: absolute;
+          top: 8px;
+          right: 10px;
+          background: none;
+          border: none;
+          font-size: 16px;
+          cursor: pointer;
+          color: #999;
+          padding: 4px;
+        }
+
+        .card-zona-info {
+          position: fixed;
+          top: 16px;
+          left: 16px;
+          right: 16px;
+          background: white;
+          border-radius: 14px;
+          padding: 12px 14px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+          display: none;
+        }
+        .card-zona-info.visible { display: block; }
+        .badge-activa {
+          display: inline-block;
+          background: #E1F5EE;
+          color: #0F6E56;
+          padding: 2px 8px;
+          border-radius: 6px;
+          font-size: 10px;
+          font-weight: 600;
+          margin-left: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="mapa-container">
+    <svg viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg">
+
+        <path d="
+    M 200 30
+    C 280 25, 360 60, 375 130
+    C 385 180, 370 230, 355 270
+    C 345 300, 360 330, 350 370
+    C 340 410, 290 440, 230 445
+    C 180 450, 130 445, 90 425
+    C 50 405, 25 365, 25 320
+    C 25 280, 45 250, 40 210
+    C 35 170, 20 130, 50 90
+    C 90 45, 145 32, 200 30
+    Z
+  " fill="#F0E8D8" stroke="#8B7355" stroke-width="2.5"/>
+
+        <path class="camino" d="M 300 360 Q 240 370, 190 360"/>
+        <path class="camino" d="M 190 360 Q 130 350, 100 310"/>
+        <path class="camino" d="M 100 310 Q 90 240, 110 180"/>
+        <path class="camino" d="M 110 180 Q 180 140, 280 150"/>
+
+        <!-- ZONA 1: Madagascar -->
+        <text x="305" y="305" class="zona-label" fill="#6C3483">Isla de Madagascar</text>
+        <g class="zona" id="zona-madagascar">
+            <ellipse class="zona-fondo" cx="305" cy="360" rx="55" ry="42" fill="#E8D5F5" stroke="#9B59B6" stroke-width="2"/>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('madagascar', 0)">
+            <circle class="huella-bg" cx="285" cy="345" r="10"/>
+            <text class="huella-icon" x="285" y="345">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('madagascar', 1)">
+            <circle class="huella-bg" cx="325" cy="345" r="10"/>
+            <text class="huella-icon" x="325" y="345">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('madagascar', 2)">
+            <circle class="huella-bg" cx="285" cy="380" r="10"/>
+            <text class="huella-icon" x="285" y="380">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('madagascar', 3)">
+            <circle class="huella-bg" cx="325" cy="380" r="10"/>
+            <text class="huella-icon" x="325" y="380">🐾</text>
+        </g>
+
+        <!-- ZONA 2: África Ecuatorial -->
+        <text x="195" y="305" class="zona-label" fill="#922B21">África Ecuatorial</text>
+        <g class="zona" id="zona-africa">
+            <ellipse class="zona-fondo" cx="195" cy="360" rx="55" ry="42" fill="#FAD5D5" stroke="#E03131" stroke-width="2"/>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('africa', 0)">
+            <circle class="huella-bg" cx="175" cy="350" r="10"/>
+            <text class="huella-icon" x="175" y="350">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('africa', 1)">
+            <circle class="huella-bg" cx="215" cy="350" r="10"/>
+            <text class="huella-icon" x="215" y="350">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('africa', 2)">
+            <circle class="huella-bg" cx="195" cy="380" r="10"/>
+            <text class="huella-icon" x="195" y="380">🐾</text>
+        </g>
+
+        <!-- ZONA 3: Sudeste Asiático -->
+        <text x="90" y="255" class="zona-label" fill="#7D5200">Sudeste Asiático</text>
+        <g class="zona" id="zona-sudeste">
+            <ellipse class="zona-fondo" cx="90" cy="310" rx="55" ry="42" fill="#FAE5C0" stroke="#F08C00" stroke-width="2"/>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('sudeste', 0)">
+            <circle class="huella-bg" cx="70" cy="295" r="10"/>
+            <text class="huella-icon" x="70" y="295">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('sudeste', 1)">
+            <circle class="huella-bg" cx="110" cy="295" r="10"/>
+            <text class="huella-icon" x="110" y="295">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('sudeste', 2)">
+            <circle class="huella-bg" cx="70" cy="320" r="10"/>
+            <text class="huella-icon" x="70" y="320">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('sudeste', 3)">
+            <circle class="huella-bg" cx="110" cy="320" r="10"/>
+            <text class="huella-icon" x="110" y="320">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('sudeste', 4)">
+            <circle class="huella-bg" cx="90" cy="340" r="10"/>
+            <text class="huella-icon" x="90" y="340">🐾</text>
+        </g>
+
+        <!-- ZONA 4: Indo Pacífico -->
+        <text x="110" y="115" class="zona-label" fill="#1A5276">Indo Pacífico</text>
+        <g class="zona" id="zona-indo">
+            <ellipse class="zona-fondo" cx="110" cy="170" rx="55" ry="42" fill="#D5E8FA" stroke="#1971C2" stroke-width="2"/>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('indo', 0)">
+            <circle class="huella-bg" cx="90" cy="160" r="10"/>
+            <text class="huella-icon" x="90" y="160">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('indo', 1)">
+            <circle class="huella-bg" cx="130" cy="160" r="10"/>
+            <text class="huella-icon" x="130" y="160">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('indo', 2)">
+            <circle class="huella-bg" cx="110" cy="190" r="10"/>
+            <text class="huella-icon" x="110" y="190">🐾</text>
+        </g>
+
+        <!-- ZONA 5: Centro y Sudamérica -->
+        <text x="290" y="95" class="zona-label" fill="#1B5E20">Centro y Sudamérica</text>
+        <g class="zona" id="zona-america">
+            <ellipse class="zona-fondo" cx="290" cy="150" rx="58" ry="42" fill="#D5E8DA" stroke="#2E7D32" stroke-width="2"/>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('america', 0)">
+            <circle class="huella-bg" cx="270" cy="135" r="10"/>
+            <text class="huella-icon" x="270" y="135">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('america', 1)">
+            <circle class="huella-bg" cx="310" cy="135" r="10"/>
+            <text class="huella-icon" x="310" y="135">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('america', 2)">
+            <circle class="huella-bg" cx="270" cy="170" r="10"/>
+            <text class="huella-icon" x="270" y="170">🐾</text>
+        </g>
+        <g class="huella" onclick="seleccionarAnimal('america', 3)">
+            <circle class="huella-bg" cx="310" cy="170" r="10"/>
+            <text class="huella-icon" x="310" y="170">🐾</text>
+        </g>
+
+        <rect x="320" y="425" width="60" height="22" rx="6" fill="#C9A84C"/>
+        <text x="350" y="440" class="entrada-label">🚪 Entrada</text>
+
+    </svg>
+</div>
+
+<div class="card-zona-info" id="card-zona-info">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+            <span id="zona-info-nombre" style="font-size:14px;font-weight:600;color:#1a1a1a"></span>
+            <span class="badge-activa">📡 Zona activa</span>
+        </div>
+    </div>
+</div>
+
+<div class="card" id="card-animal">
+    <button class="card-close" onclick="cerrarCardAnimal()">✕</button>
+    <div class="card-row">
+        <div class="card-img" id="card-img">🐾</div>
+        <div class="card-info">
+            <div class="card-nombre" id="card-nombre"></div>
+            <div class="card-zona" id="card-zona-texto"></div>
+            <button class="card-btn" onclick="verDetalles()">Ver detalles</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const zonas = {
+      madagascar: {
+        nombre: 'Isla de Madagascar',
+        animales: [
+          { nombre: 'Lémur blanco y negro', _id: '' },
+          { nombre: 'Lémur de cola anillada', _id: '' },
+          { nombre: 'Lémur negro', _id: '' },
+          { nombre: 'Lémur rojo', _id: '' }
+        ]
+      },
+      africa: {
+        nombre: 'África Ecuatorial',
+        animales: [
+          { nombre: 'Gorila occidental', _id: '' },
+          { nombre: 'Cocodrilo del Nilo', _id: '' },
+          { nombre: 'Hipopótamo pigmeo', _id: '' }
+        ]
+      },
+      sudeste: {
+        nombre: 'Sudeste Asiático',
+        animales: [
+          { nombre: 'Tigre de Sumatra', _id: '' },
+          { nombre: 'Orangután de Borneo', _id: '' },
+          { nombre: 'Cálao Bicorne', _id: '' },
+          { nombre: 'Pez espátula', _id: '' },
+          { nombre: 'Galápago gigante asiático', _id: '' }
+        ]
+      },
+      indo: {
+        nombre: 'Indo Pacífico',
+        animales: [
+          { nombre: 'Dragón de Komodo', _id: '' },
+          { nombre: 'Tortuga gigante de las Galápagos', _id: '' },
+          { nombre: 'Pitón de la India', _id: '' }
+        ]
+      },
+      america: {
+        nombre: 'Centro y Sudamérica',
+        animales: [
+          { nombre: 'Tití león dorado', _id: '' },
+          { nombre: 'Nutria gigante del Amazonas', _id: '' },
+          { nombre: 'Ajolote mexicano', _id: '' },
+          { nombre: 'Tucaneta verde', _id: '' }
+        ]
+      }
+    };
+
+    const zonaNombreToId = {
+      'Isla de Madagascar': 'madagascar',
+      'África Ecuatorial': 'africa',
+      'Sudeste Asiático': 'sudeste',
+      'Indo Pacífico': 'indo',
+      'Centro y Sudamérica': 'america'
+    };
+
+    let zonaActivaBeacon = null;
+    let animalSeleccionado = null;
+
+    function verDetalles() {
+      if (animalSeleccionado && window.AndroidBridge) {
+        window.AndroidBridge.verDetalleAnimal(animalSeleccionado.nombre);
+      }
+    }
+
+    window.setZonaActiva = function(nombreZona) {
+      if (zonaActivaBeacon) {
+        const prev = document.getElementById('zona-' + zonaActivaBeacon);
+        if (prev) prev.classList.remove('activa');
+      }
+
+      const idZona = zonaNombreToId[nombreZona];
+      if (idZona) {
+        zonaActivaBeacon = idZona;
+        const el = document.getElementById('zona-' + idZona);
+        if (el) el.classList.add('activa');
+
+        document.getElementById('zona-info-nombre').textContent = zonas[idZona].nombre;
+        document.getElementById('card-zona-info').classList.add('visible');
+      } else {
+        zonaActivaBeacon = null;
+        document.getElementById('card-zona-info').classList.remove('visible');
+      }
+    };
+
+    window.setAnimalIds = function(jsonData) {
+      try {
+        const data = JSON.parse(jsonData);
+        for (const zonaId in data) {
+          if (zonas[zonaId]) {
+            data[zonaId].forEach((animal, i) => {
+              if (zonas[zonaId].animales[i]) {
+                zonas[zonaId].animales[i]._id = animal._id || '';
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error parseando animales:', e);
+      }
+    };
+
+    function seleccionarAnimal(idZona, indice) {
+      const zona = zonas[idZona];
+      const animal = zona.animales[indice];
+      if (!animal) return;
+
+      animalSeleccionado = animal;
+      document.getElementById('card-nombre').textContent = animal.nombre;
+      document.getElementById('card-zona-texto').textContent = zona.nombre;
+      document.getElementById('card-img').textContent = '🐾';
+      document.getElementById('card-animal').classList.add('visible');
+    }
+
+    function cerrarCardAnimal() {
+      document.getElementById('card-animal').classList.remove('visible');
+      animalSeleccionado = null;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.AndroidBridge && window.AndroidBridge.mapaListo) {
+        window.AndroidBridge.mapaListo();
+      }
+    });
+</script>
+
+</body>
+</html>

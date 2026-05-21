@@ -49,7 +49,7 @@ fun PantallaLogros() {
         }?.toSet() ?: emptySet()
     }
 
-    val totalAnimales = 18
+    val totalAnimales = 19
     val animalesVistos = remember {
         SesionUsuario.usuario?.historialVisitas?.flatMap { visita ->
             (visita["animalesVistos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()

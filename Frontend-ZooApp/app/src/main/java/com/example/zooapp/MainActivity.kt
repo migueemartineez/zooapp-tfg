@@ -1,12 +1,15 @@
 package com.example.zooapp
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
@@ -16,18 +19,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.zooapp.ui.theme.ZooAppTheme
-import com.mapbox.geojson.Point
-import com.mapbox.maps.extension.compose.MapboxMap
-import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.compose.ui.graphics.Color
 
 // Mapeo zona → zonaId del backend
 val zonaIds = mapOf(
@@ -118,6 +120,14 @@ class MainActivity : ComponentActivity() {
                             PantallaLogin(
                                 onLoginExitoso = { user ->
                                     SesionUsuario.usuario = user
+                                    // Cargar todos los animales al hacer login
+                                    RetrofitClient.instance.obtenerAnimales()
+                                        .enqueue(object : Callback<List<Animal>> {
+                                            override fun onResponse(call: Call<List<Animal>>, response: Response<List<Animal>>) {
+                                                SesionUsuario.todosLosAnimales = response.body()
+                                            }
+                                            override fun onFailure(call: Call<List<Animal>>, t: Throwable) {}
+                                        })
                                     beaconService = BeaconService(this@MainActivity) { zona ->
                                         zonaActual = zona ?: ""
                                     }
@@ -228,28 +238,18 @@ fun PantallaLogin(onLoginExitoso: (User) -> Unit, navController: NavController) 
         }
     }
 }
-
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun PantallaMapa(zonaActual: String, navController: NavController) {
-    val mapViewportState = rememberMapViewportState {
-        setCameraOptions {
-            zoom(16.0)
-            center(Point.fromLngLat(-4.6342, 36.5397))
-            pitch(0.0)
-            bearing(0.0)
-        }
-    }
 
-    // Lista de animales de la zona actual
     var animales by remember { mutableStateOf<List<Animal>>(emptyList()) }
-    var cargando by remember { mutableStateOf(false) }
+    var webView by remember { mutableStateOf<WebView?>(null) }
 
-    // Cuando cambia la zona, consultar el backend
+    // Cuando cambia la zona por beacon
     LaunchedEffect(zonaActual) {
         if (zonaActual.isNotEmpty()) {
             val zonaId = zonaIds[zonaActual]
             if (zonaId != null) {
-                cargando = true
                 RetrofitClient.instance.obtenerAnimalesPorZona(zonaId)
                     .enqueue(object : Callback<List<Animal>> {
                         override fun onResponse(
@@ -257,9 +257,8 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                             response: Response<List<Animal>>
                         ) {
                             animales = response.body() ?: emptyList()
-                            cargando = false
 
-                            // Guardar visita solo si es una zona diferente a la última visitada
+                            // Guardar visita
                             val usuarioId = SesionUsuario.usuario?._id
                             if (usuarioId != null && animales.isNotEmpty() && zonaActual != SesionUsuario.ultimaZonaGuardada) {
                                 SesionUsuario.ultimaZonaGuardada = zonaActual
@@ -275,63 +274,82 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                                         override fun onFailure(call: Call<User>, t: Throwable) {}
                                     })
                             }
+
+                            // Notificar zona activa al WebView
+                            webView?.post {
+                                webView?.evaluateJavascript(
+                                    "window.setZonaActiva('${zonaActual.replace("'", "\\'")}');",
+                                    null
+                                )
+                            }
                         }
                         override fun onFailure(call: Call<List<Animal>>, t: Throwable) {
                             animales = emptyList()
-                            cargando = false
                         }
                     })
             }
         } else {
             animales = emptyList()
+            webView?.post {
+                webView?.evaluateJavascript("window.setZonaActiva('');", null)
+            }
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        MapboxMap(
-            modifier = Modifier.fillMaxSize(),
-            mapViewportState = mapViewportState
-        )
-
-        if (zonaActual.isNotEmpty()) {
-            Card(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(16.dp)
-                    .fillMaxWidth(0.9f)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = zonaActual,
-                        style = MaterialTheme.typography.titleMedium
+        AndroidView(
+            factory = { context ->
+                WebView(context).apply {
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.allowFileAccess = true
+                    settings.allowContentAccess = true
+                    settings.useWideViewPort = true
+                    settings.loadWithOverviewMode = true
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
                     )
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        thickness = DividerDefaults.Thickness,
-                        color = DividerDefaults.color
-                    )
-
-                    if (cargando) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                    } else if (animales.isNotEmpty()) {
-                        LazyColumn {
-                            items(animales) { animal ->
-                                TextButton(
-                                    onClick = { navController.navigate("detalle/${animal._id}") },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = "• ${animal.nombre}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(vertical = 2.dp)
-                                    )
-                                }
+                    setBackgroundColor(android.graphics.Color.parseColor("#F5F1E8"))
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            if (zonaActual.isNotEmpty()) {
+                                view?.evaluateJavascript(
+                                    "window.setZonaActiva('${zonaActual.replace("'", "\\'")}');",
+                                    null
+                                )
                             }
                         }
                     }
+
+                    addJavascriptInterface(
+                        object {
+                            @JavascriptInterface
+                            fun verDetalleAnimal(nombreAnimal: String) {
+                                val animal = animales.find { it.nombre == nombreAnimal }
+                                    ?: SesionUsuario.todosLosAnimales?.find { it.nombre == nombreAnimal }
+                                animal?.let {
+                                    (context as? android.app.Activity)?.runOnUiThread {
+                                        navController.navigate("detalle/${it._id}")
+                                    }
+                                }
+                            }
+
+                            @JavascriptInterface
+                            fun mapaListo() {}
+                        },
+                        "AndroidBridge"
+                    )
+
+                    loadUrl("file:///android_asset/bioparc_map.html")
+                    webView = this
                 }
+            },
+            modifier = Modifier.fillMaxSize(),
+            update = { view ->
+                webView = view
             }
-        }
+        )
     }
 }
