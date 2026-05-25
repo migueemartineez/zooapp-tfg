@@ -97,6 +97,7 @@
             justify-content: center;
             font-size: 28px;
             flex-shrink: 0;
+            overflow: hidden;
         }
         .card-info { flex: 1; min-width: 0; }
         .card-nombre {
@@ -309,45 +310,45 @@
         madagascar: {
             nombre: 'Isla de Madagascar',
             animales: [
-                { nombre: 'Lémur blanco y negro', id: '' },
-                { nombre: 'Lémur de cola anillada', id: '' },
-                { nombre: 'Lémur negro', id: '' },
-                { nombre: 'Lémur rojo', id: '' }
+                { nombre: 'Lémur blanco y negro', id: '', imagen: '' },
+                { nombre: 'Lémur de cola anillada', id: '', imagen: '' },
+                { nombre: 'Lémur negro', id: '', imagen: '' },
+                { nombre: 'Lémur rojo', id: '', imagen: '' }
             ]
         },
         africa: {
             nombre: 'África Ecuatorial',
             animales: [
-                { nombre: 'Gorila occidental de llanura', id: '' },
-                { nombre: 'Cocodrilo del Nilo', id: '' },
-                { nombre: 'Hipopótamo pigmeo', id: '' }
+                { nombre: 'Gorila occidental de llanura', id: '', imagen: '' },
+                { nombre: 'Cocodrilo del Nilo', id: '', imagen: '' },
+                { nombre: 'Hipopótamo pigmeo', id: '', imagen: '' }
             ]
         },
         sudeste: {
             nombre: 'Sudeste Asiático',
             animales: [
-                { nombre: 'Tigre de Sumatra', id: '' },
-                { nombre: 'Orangután de Borneo', id: '' },
-                { nombre: 'Cálao Bicorne', id: '' },
-                { nombre: 'Pez espátula', id: '' },
-                { nombre: 'Galápago gigante asiático', id: '' }
+                { nombre: 'Tigre de Sumatra', id: '', imagen: '' },
+                { nombre: 'Orangután de Borneo', id: '', imagen: '' },
+                { nombre: 'Cálao Bicorne', id: '', imagen: '' },
+                { nombre: 'Pez espátula', id: '', imagen: '' },
+                { nombre: 'Galápago gigante asiático', id: '', imagen: '' }
             ]
         },
         indo: {
             nombre: 'Indo Pacífico',
             animales: [
-                { nombre: 'Dragón de Komodo', id: '' },
-                { nombre: 'Tortuga gigante de las Galápagos', id: '' },
-                { nombre: 'Pitón de la India', id: '' }
+                { nombre: 'Dragón de Komodo', id: '', imagen: '' },
+                { nombre: 'Tortuga gigante de las Galápagos', id: '', imagen: '' },
+                { nombre: 'Pitón de la India', id: '', imagen: '' }
             ]
         },
         america: {
             nombre: 'Centro y Sudamérica',
             animales: [
-                { nombre: 'Tití león dorado', id: '' },
-                { nombre: 'Nutria gigante del Amazonas', id: '' },
-                { nombre: 'Ajolote mexicano', id: '' },
-                { nombre: 'Tucaneta verde', id: '' }
+                { nombre: 'Tití león dorado', id: '', imagen: '' },
+                { nombre: 'Nutria gigante del Amazonas', id: '', imagen: '' },
+                { nombre: 'Ajolote mexicano', id: '', imagen: '' },
+                { nombre: 'Tucaneta verde', id: '', imagen: '' }
             ]
         }
     };
@@ -368,7 +369,6 @@
         america: 4
     };
 
-    // Set de zonas ya descubiertas (persiste durante la sesión)
     const zonasDescubiertas = new Set();
 
     let zonaActivaBeacon = null;
@@ -383,7 +383,7 @@
     }
 
     function restaurarHuellas(idZona) {
-        if (zonasDescubiertas.has(idZona)) return; // No restaurar si ya fue descubierta
+        if (zonasDescubiertas.has(idZona)) return;
         const numHuellas = huellasPorZona[idZona] || 0;
         for (let i = 0; i < numHuellas; i++) {
             const huella = document.getElementById('huella-' + idZona + '-' + i);
@@ -407,8 +407,15 @@
         });
     };
 
+    window.setImagenesZona = function(zonaId, animalesData) {
+        animalesData.forEach(function(animal, i) {
+            if (zonas[zonaId] && zonas[zonaId].animales[i]) {
+                zonas[zonaId].animales[i].imagen = animal.imagen || '';
+            }
+        });
+    };
+
     window.setZonaActiva = function(nombreZona) {
-        // Restaurar huellas de zona anterior (solo si no está descubierta)
         if (zonaActivaBeacon) {
             const prev = document.getElementById('zona-' + zonaActivaBeacon);
             if (prev) prev.classList.remove('activa');
@@ -418,7 +425,7 @@
         const idZona = zonaNombreToId[nombreZona];
         if (idZona) {
             zonaActivaBeacon = idZona;
-            zonasDescubiertas.add(idZona); // Marcar como descubierta
+            zonasDescubiertas.add(idZona);
             const el = document.getElementById('zona-' + idZona);
             if (el) el.classList.add('activa');
             desbloquearHuellas(idZona);
@@ -453,18 +460,22 @@
         if (!animal) return;
 
         const cardBtn = document.getElementById('card-btn');
+        const imgEl = document.getElementById('card-img');
 
         if (zonaActivaBeacon === idZona || zonasDescubiertas.has(idZona)) {
-            // Zona activa o descubierta → mostrar info del animal
             animalSeleccionado = animal;
-            document.getElementById('card-img').textContent = '🐾';
+            if (animal.imagen) {
+                imgEl.innerHTML = '<img src="' + animal.imagen + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+            } else {
+                imgEl.textContent = '🐾';
+            }
             document.getElementById('card-nombre').textContent = animal.nombre;
             document.getElementById('card-zona-texto').textContent = zona.nombre;
             cardBtn.style.display = 'inline-block';
         } else {
-            // Zona no descubierta → mostrar mensaje misterioso
             animalSeleccionado = null;
-            document.getElementById('card-img').textContent = '🔍';
+            imgEl.textContent = '🔍';
+            imgEl.innerHTML = '🔍';
             document.getElementById('card-nombre').textContent = '¡Hábitat misterioso!';
             document.getElementById('card-zona-texto').textContent = 'Acércate a ' + zona.nombre + ' para descubrir qué animales se esconden aquí';
             cardBtn.style.display = 'none';

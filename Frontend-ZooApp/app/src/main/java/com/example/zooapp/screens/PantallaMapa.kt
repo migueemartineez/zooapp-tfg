@@ -28,7 +28,6 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
     var animales by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var webView by remember { mutableStateOf<WebView?>(null) }
 
-    // Cuando cambia la zona por beacon
     LaunchedEffect(zonaActual) {
         if (zonaActual.isNotEmpty()) {
             val zonaId = zonaIds[zonaActual]
@@ -65,6 +64,27 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                                     null
                                 )
                             }
+
+                            // Pasar imágenes de animales al WebView
+                            val zonaKey = when (zonaActual) {
+                                "Isla de Madagascar" -> "madagascar"
+                                "África Ecuatorial" -> "africa"
+                                "Sudeste Asiático" -> "sudeste"
+                                "Indo Pacífico" -> "indo"
+                                "Centro y Sudamérica" -> "america"
+                                else -> ""
+                            }
+                            if (zonaKey.isNotEmpty()) {
+                                val animalesJson = animales.joinToString(",", "[", "]") { animal ->
+                                    "{\"nombre\":\"${animal.nombre.replace("\"", "\\\"")}\",\"imagen\":\"${animal.imagen ?: ""}\"}"
+                                }
+                                webView?.post {
+                                    webView?.evaluateJavascript(
+                                        "window.setImagenesZona('$zonaKey', $animalesJson);",
+                                        null
+                                    )
+                                }
+                            }
                         }
                         override fun onFailure(call: Call<List<Animal>>, t: Throwable) {
                             animales = emptyList()
@@ -98,7 +118,6 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
 
-                            // Pasar zonas ya visitadas al WebView
                             val zonasVisitadas = SesionUsuario.usuario?.historialVisitas?.flatMap { visita ->
                                 (visita["zonasVisitadas"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                             }?.toSet() ?: emptySet()
@@ -108,12 +127,36 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                                 view?.evaluateJavascript("window.setZonasVisitadas($zonasJson);", null)
                             }
 
-                            // Zona activa actual
                             if (zonaActual.isNotEmpty()) {
                                 view?.evaluateJavascript(
                                     "window.setZonaActiva('${zonaActual.replace("'", "\\'")}');",
                                     null
                                 )
+                            }
+                            // Pasar imágenes de todos los animales al WebView
+                            val todosAnimales = SesionUsuario.todosLosAnimales
+                            if (!todosAnimales.isNullOrEmpty()) {
+                                val zonaKeys = mapOf(
+                                    "Isla de Madagascar" to "madagascar",
+                                    "África Ecuatorial" to "africa",
+                                    "Sudeste Asiático" to "sudeste",
+                                    "Indo Pacífico" to "indo",
+                                    "Centro y Sudamérica" to "america"
+                                )
+                                zonaKeys.forEach { (nombreZona, zonaKey) ->
+                                    val animalesZona = todosAnimales.filter {
+                                        it.zonaId == zonaIds[nombreZona]
+                                    }
+                                    if (animalesZona.isNotEmpty()) {
+                                        val animalesJson = animalesZona.joinToString(",", "[", "]") { animal ->
+                                            "{\"nombre\":\"${animal.nombre.replace("\"", "\\\"")}\",\"imagen\":\"${animal.imagen ?: ""}\"}"
+                                        }
+                                        view?.evaluateJavascript(
+                                            "window.setImagenesZona('$zonaKey', $animalesJson);",
+                                            null
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -121,6 +164,7 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                     addJavascriptInterface(
                         object {
                             @JavascriptInterface
+                            @Suppress("unused")
                             fun verDetalleAnimal(nombreAnimal: String) {
                                 val animal = animales.find { it.nombre == nombreAnimal }
                                     ?: SesionUsuario.todosLosAnimales?.find { it.nombre == nombreAnimal }
