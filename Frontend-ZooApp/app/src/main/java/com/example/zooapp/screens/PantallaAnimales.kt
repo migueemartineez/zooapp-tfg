@@ -109,7 +109,7 @@ fun PantallaAnimales(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp),
-                        onClick = { navController.navigate("detalle/${animal.id}") }
+                        onClick = { navController.navigate("detalle/${animal.id}/animales") }
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),

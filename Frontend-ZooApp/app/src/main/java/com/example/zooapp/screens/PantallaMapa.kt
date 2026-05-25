@@ -127,6 +127,16 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                                 view?.evaluateJavascript("window.setZonasVisitadas($zonasJson);", null)
                             }
 
+                            // Pasar animales ya vistos al WebView
+                            val animalesVistos = SesionUsuario.usuario?.historialVisitas?.flatMap { visita ->
+                                (visita["animalesVistos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                            }?.toSet() ?: emptySet()
+
+                            if (animalesVistos.isNotEmpty()) {
+                                val json = animalesVistos.joinToString(",", "[", "]") { "\"$it\"" }
+                                view?.evaluateJavascript("window.setAnimalesVistos($json);", null)
+                            }
+
                             if (zonaActual.isNotEmpty()) {
                                 view?.evaluateJavascript(
                                     "window.setZonaActiva('${zonaActual.replace("'", "\\'")}');",
@@ -170,7 +180,7 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                                     ?: SesionUsuario.todosLosAnimales?.find { it.nombre == nombreAnimal }
                                 animal?.let {
                                     (context as? android.app.Activity)?.runOnUiThread {
-                                        navController.navigate("detalle/${it.id}")
+                                        navController.navigate("detalle/${it.id}/mapa")
                                     }
                                 }
                             }
@@ -185,6 +195,16 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             update = { view ->
                 webView = view
+                val ultimoAnimal = SesionUsuario.ultimoAnimalVisto
+                if (ultimoAnimal.isNotEmpty()) {
+                    SesionUsuario.ultimoAnimalVisto = ""
+                    view.post {
+                        view.evaluateJavascript(
+                            "window.marcarAnimalVisto('${ultimoAnimal.replace("'", "\\'")}');",
+                            null
+                        )
+                    }
+                }
             }
         )
     }

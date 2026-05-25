@@ -112,9 +112,9 @@ fun PantallaRegistro(navController: NavController) {
                             cargando = true
                             mensaje = ""
                             val nuevoUsuario = User(
-                                nombre = nombre,
-                                email = email,
-                                password = password
+                                nombre = nombre.trim(),
+                                email = email.trim(),
+                                password = password.trim()
                             )
                             RetrofitClient.instance.registrarUsuario(nuevoUsuario)
                                 .enqueue(object : Callback<RegistroResponse> {

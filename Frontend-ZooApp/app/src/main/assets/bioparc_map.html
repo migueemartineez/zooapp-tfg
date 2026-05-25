@@ -378,7 +378,9 @@
         const numHuellas = huellasPorZona[idZona] || 0;
         for (let i = 0; i < numHuellas; i++) {
             const huella = document.getElementById('huella-' + idZona + '-' + i);
-            if (huella) huella.textContent = '🐾';
+            if (huella && huella.textContent !== '⭐') {
+                huella.textContent = '🐾';
+            }
         }
     }
 
@@ -462,7 +464,8 @@
         const cardBtn = document.getElementById('card-btn');
         const imgEl = document.getElementById('card-img');
 
-        if (zonaActivaBeacon === idZona || zonasDescubiertas.has(idZona)) {
+        if (zonaActivaBeacon === idZona) {
+            // Beacon activo → mostrar info y botón ver detalles
             animalSeleccionado = animal;
             if (animal.imagen) {
                 imgEl.innerHTML = '<img src="' + animal.imagen + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
@@ -472,9 +475,22 @@
             document.getElementById('card-nombre').textContent = animal.nombre;
             document.getElementById('card-zona-texto').textContent = zona.nombre;
             cardBtn.style.display = 'inline-block';
+
+        } else if (zonasDescubiertas.has(idZona)) {
+            // Zona descubierta sin beacon → mostrar info pero SIN ver detalles
+            animalSeleccionado = animal.visto ? animal : null;
+            if (animal.imagen) {
+                imgEl.innerHTML = '<img src="' + animal.imagen + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+            } else {
+                imgEl.textContent = '🐾';
+            }
+            document.getElementById('card-nombre').textContent = animal.nombre;
+            document.getElementById('card-zona-texto').textContent = zona.nombre;
+            cardBtn.style.display = animal.visto ? 'inline-block' : 'none';
+
         } else {
+            // Zona no descubierta → misterioso
             animalSeleccionado = null;
-            imgEl.textContent = '🔍';
             imgEl.innerHTML = '🔍';
             document.getElementById('card-nombre').textContent = '¡Hábitat misterioso!';
             document.getElementById('card-zona-texto').textContent = 'Acércate a ' + zona.nombre + ' para descubrir qué animales se esconden aquí';
@@ -488,6 +504,31 @@
         document.getElementById('card-animal').classList.remove('visible');
         animalSeleccionado = null;
     }
+
+    window.setAnimalesVistos = function(nombresAnimales) {
+        nombresAnimales.forEach(function(nombre) {
+            for (const zonaId in zonas) {
+                const idx = zonas[zonaId].animales.findIndex(a => a.nombre === nombre);
+                if (idx !== -1) {
+                    const huella = document.getElementById('huella-' + zonaId + '-' + idx);
+                    if (huella) huella.textContent = '⭐';
+                    zonas[zonaId].animales[idx].visto = true;
+                }
+            }
+        });
+    };
+
+    window.marcarAnimalVisto = function(nombreAnimal) {
+        for (const zonaId in zonas) {
+            const idx = zonas[zonaId].animales.findIndex(a => a.nombre === nombreAnimal);
+            if (idx !== -1) {
+                const huella = document.getElementById('huella-' + zonaId + '-' + idx);
+                if (huella) huella.textContent = '⭐';
+                zonas[zonaId].animales[idx].visto = true;
+            }
+        }
+    };
+
 </script>
 
 </body>

@@ -161,10 +161,12 @@ class MainActivity : ComponentActivity() {
                         composable("perfil") {
                             PantallaPerfil(navController = navController)
                         }
-                        composable("detalle/{animalId}") { backStackEntry ->
+                        composable("detalle/{animalId}/{origen}") { backStackEntry ->
                             val animalId = backStackEntry.arguments?.getString("animalId") ?: ""
+                            val origen = backStackEntry.arguments?.getString("origen") ?: "animales"
                             PantallaDetalleAnimal(
                                 animalId = animalId,
+                                origen = origen,
                                 navController = navController
                             )
                         }

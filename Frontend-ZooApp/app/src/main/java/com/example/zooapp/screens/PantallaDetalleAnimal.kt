@@ -27,7 +27,7 @@ import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaDetalleAnimal(animalId: String, navController: NavController) {
+fun PantallaDetalleAnimal(animalId: String, origen: String, navController: NavController) {
     var animal by remember { mutableStateOf<Animal?>(null) }
     var cargando by remember { mutableStateOf(true) }
 
@@ -41,7 +41,7 @@ fun PantallaDetalleAnimal(animalId: String, navController: NavController) {
                     // Marcar animal como visto al abrir el detalle
                     val usuarioId = SesionUsuario.usuario?.id
                     val nombreAnimal = animal?.nombre
-                    if (usuarioId != null && nombreAnimal != null) {
+                    if (usuarioId != null && nombreAnimal != null && origen == "mapa") {
                         val visita = VisitaRequest(
                             zonasVisitadas = emptyList(),
                             animalesVistos = listOf(nombreAnimal)
@@ -53,6 +53,7 @@ fun PantallaDetalleAnimal(animalId: String, navController: NavController) {
                                 }
                                 override fun onFailure(call: Call<User>, t: Throwable) {}
                             })
+                        SesionUsuario.ultimoAnimalVisto = nombreAnimal
                     }
                 }
                 override fun onFailure(call: Call<Animal>, t: Throwable) {

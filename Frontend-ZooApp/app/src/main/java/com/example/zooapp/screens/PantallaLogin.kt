@@ -77,7 +77,7 @@ fun PantallaLogin(onLoginExitoso: (User) -> Unit, navController: NavController) 
                 if (!cargando) {
                     cargando = true
                     mensaje = ""
-                    UserRepository.loginUsuario(email, password) { response ->
+                    UserRepository.loginUsuario(email.trim(), password.trim()) { response ->
                         cargando = false
                         if (response != null) {
                             onLoginExitoso(response.usuario)
