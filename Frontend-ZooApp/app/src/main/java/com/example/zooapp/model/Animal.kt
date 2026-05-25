@@ -1,7 +1,10 @@
-package com.example.zooapp
+package com.example.zooapp.model
+
+import com.google.gson.annotations.SerializedName
 
 data class Animal(
-    val _id: String? = null,
+    @SerializedName("_id")
+    val id: String? = null,
     val nombre: String,
     val descripcion: String,
     val gradoAmenaza: String = "",

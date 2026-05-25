@@ -1,6 +1,11 @@
-package com.example.zooapp
+package com.example.zooapp.repository
 
 import android.util.Log
+import com.example.zooapp.model.User
+import com.example.zooapp.network.LoginRequest
+import com.example.zooapp.network.LoginResponse
+import com.example.zooapp.network.RegistroResponse
+import com.example.zooapp.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

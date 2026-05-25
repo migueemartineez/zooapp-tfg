@@ -1,26 +1,16 @@
 package com.example.zooapp
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.os.Bundle
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -29,7 +19,17 @@ import com.example.zooapp.ui.theme.ZooAppTheme
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import androidx.compose.ui.graphics.Color
+import com.example.zooapp.model.Animal
+import com.example.zooapp.network.RetrofitClient
+import com.example.zooapp.screens.PantallaAnimales
+import com.example.zooapp.service.BeaconService
+import com.example.zooapp.screens.PantallaDetalleAnimal
+import com.example.zooapp.screens.PantallaLogin
+import com.example.zooapp.screens.PantallaLogros
+import com.example.zooapp.screens.PantallaPerfil
+import com.example.zooapp.screens.PantallaRegistro
+import com.example.zooapp.screens.PantallaRutas
+import com.example.zooapp.screens.PantallaMapa
 
 // Mapeo zona → zonaId del backend
 val zonaIds = mapOf(
@@ -132,7 +132,9 @@ class MainActivity : ComponentActivity() {
                                         zonaActual = zona ?: ""
                                     }
                                     beaconService.iniciar()
-                                    navController.navigate("mapa")
+                                    navController.navigate("mapa") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 },
                                 navController = navController
                             )
@@ -147,7 +149,10 @@ class MainActivity : ComponentActivity() {
                             PantallaAnimales(navController = navController)
                         }
                         composable("rutas") {
-                            PantallaRutas(navController = navController, timestamp = SesionUsuario.rutasTimestamp)
+                            PantallaRutas(
+                                navController = navController,
+                                timestamp = SesionUsuario.rutasTimestamp
+                            )
                         }
                         composable("logros") {
                             PantallaLogros()
@@ -157,7 +162,10 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("detalle/{animalId}") { backStackEntry ->
                             val animalId = backStackEntry.arguments?.getString("animalId") ?: ""
-                            PantallaDetalleAnimal(animalId = animalId, navController = navController)
+                            PantallaDetalleAnimal(
+                                animalId = animalId,
+                                navController = navController
+                            )
                         }
                     }
                 }
@@ -170,186 +178,5 @@ class MainActivity : ComponentActivity() {
         if (::beaconService.isInitialized) {
             beaconService.detener()
         }
-    }
-}
-
-@Composable
-fun PantallaLogin(onLoginExitoso: (User) -> Unit, navController: NavController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var mensaje by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("ZooApp", style = MaterialTheme.typography.headlineLarge)
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                UserRepository.loginUsuario(email, password) { response ->
-                    if (response != null) {
-                        onLoginExitoso(response.usuario)
-                    } else {
-                        mensaje = "Email o contraseña incorrectos"
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Iniciar sesión")
-        }
-
-        TextButton(
-            onClick = { navController.navigate("registro") },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("¿No tienes cuenta? Regístrate")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (mensaje.isNotEmpty()) {
-            Text(mensaje, color = MaterialTheme.colorScheme.error)
-        }
-    }
-}
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun PantallaMapa(zonaActual: String, navController: NavController) {
-
-    var animales by remember { mutableStateOf<List<Animal>>(emptyList()) }
-    var webView by remember { mutableStateOf<WebView?>(null) }
-
-    // Cuando cambia la zona por beacon
-    LaunchedEffect(zonaActual) {
-        if (zonaActual.isNotEmpty()) {
-            val zonaId = zonaIds[zonaActual]
-            if (zonaId != null) {
-                RetrofitClient.instance.obtenerAnimalesPorZona(zonaId)
-                    .enqueue(object : Callback<List<Animal>> {
-                        override fun onResponse(
-                            call: Call<List<Animal>>,
-                            response: Response<List<Animal>>
-                        ) {
-                            animales = response.body() ?: emptyList()
-
-                            // Guardar visita
-                            val usuarioId = SesionUsuario.usuario?._id
-                            if (usuarioId != null && animales.isNotEmpty() && zonaActual != SesionUsuario.ultimaZonaGuardada) {
-                                SesionUsuario.ultimaZonaGuardada = zonaActual
-                                val visita = VisitaRequest(
-                                    zonasVisitadas = listOf(zonaActual),
-                                    animalesVistos = emptyList()
-                                )
-                                RetrofitClient.instance.anadirVisita(usuarioId, visita)
-                                    .enqueue(object : Callback<User> {
-                                        override fun onResponse(call: Call<User>, response: Response<User>) {
-                                            response.body()?.let { SesionUsuario.usuario = it }
-                                        }
-                                        override fun onFailure(call: Call<User>, t: Throwable) {}
-                                    })
-                            }
-
-                            // Notificar zona activa al WebView
-                            webView?.post {
-                                webView?.evaluateJavascript(
-                                    "window.setZonaActiva('${zonaActual.replace("'", "\\'")}');",
-                                    null
-                                )
-                            }
-                        }
-                        override fun onFailure(call: Call<List<Animal>>, t: Throwable) {
-                            animales = emptyList()
-                        }
-                    })
-            }
-        } else {
-            animales = emptyList()
-            webView?.post {
-                webView?.evaluateJavascript("window.setZonaActiva('');", null)
-            }
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { context ->
-                WebView(context).apply {
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    settings.allowFileAccess = true
-                    settings.allowContentAccess = true
-                    settings.useWideViewPort = true
-                    settings.loadWithOverviewMode = true
-                    layoutParams = android.view.ViewGroup.LayoutParams(
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    setBackgroundColor(android.graphics.Color.parseColor("#F5F1E8"))
-                    webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            super.onPageFinished(view, url)
-                            if (zonaActual.isNotEmpty()) {
-                                view?.evaluateJavascript(
-                                    "window.setZonaActiva('${zonaActual.replace("'", "\\'")}');",
-                                    null
-                                )
-                            }
-                        }
-                    }
-
-                    addJavascriptInterface(
-                        object {
-                            @JavascriptInterface
-                            fun verDetalleAnimal(nombreAnimal: String) {
-                                val animal = animales.find { it.nombre == nombreAnimal }
-                                    ?: SesionUsuario.todosLosAnimales?.find { it.nombre == nombreAnimal }
-                                animal?.let {
-                                    (context as? android.app.Activity)?.runOnUiThread {
-                                        navController.navigate("detalle/${it._id}")
-                                    }
-                                }
-                            }
-
-                            @JavascriptInterface
-                            fun mapaListo() {}
-                        },
-                        "AndroidBridge"
-                    )
-
-                    loadUrl("file:///android_asset/bioparc_map.html")
-                    webView = this
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-            update = { view ->
-                webView = view
-            }
-        )
     }
 }

@@ -1,4 +1,5 @@
-package com.example.zooapp
+package com.example.zooapp.model
+import com.google.gson.annotations.SerializedName
 
 data class Preferencias(
     val ecosistema: List<String> = emptyList(),
@@ -7,7 +8,8 @@ data class Preferencias(
 )
 
 data class User(
-    val _id: String? = null,
+    @SerializedName("_id")
+    val id: String? = null,
     val nombre: String,
     val email: String,
     val password: String,

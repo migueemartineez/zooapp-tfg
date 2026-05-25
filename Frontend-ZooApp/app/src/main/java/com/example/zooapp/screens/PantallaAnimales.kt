@@ -1,4 +1,4 @@
-package com.example.zooapp
+package com.example.zooapp.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.zooapp.model.Animal
+import com.example.zooapp.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -103,7 +105,7 @@ fun PantallaAnimales(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp),
-                        onClick = { navController.navigate("detalle/${animal._id}") }
+                        onClick = { navController.navigate("detalle/${animal.id}") }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(

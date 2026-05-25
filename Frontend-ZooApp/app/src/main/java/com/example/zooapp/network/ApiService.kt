@@ -1,5 +1,9 @@
-package com.example.zooapp
+package com.example.zooapp.network
 
+import com.example.zooapp.model.Animal
+import com.example.zooapp.model.Preferencias
+import com.example.zooapp.model.User
+import com.example.zooapp.model.Zona
 import retrofit2.Call
 import retrofit2.http.*
 

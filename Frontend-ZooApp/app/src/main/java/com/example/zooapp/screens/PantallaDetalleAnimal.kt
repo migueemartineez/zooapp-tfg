@@ -1,4 +1,4 @@
-package com.example.zooapp
+package com.example.zooapp.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +16,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.zooapp.SesionUsuario
+import com.example.zooapp.model.Animal
+import com.example.zooapp.model.User
+import com.example.zooapp.network.RetrofitClient
+import com.example.zooapp.network.VisitaRequest
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -34,7 +39,7 @@ fun PantallaDetalleAnimal(animalId: String, navController: NavController) {
                     cargando = false
 
                     // Marcar animal como visto al abrir el detalle
-                    val usuarioId = SesionUsuario.usuario?._id
+                    val usuarioId = SesionUsuario.usuario?.id
                     val nombreAnimal = animal?.nombre
                     if (usuarioId != null && nombreAnimal != null) {
                         val visita = VisitaRequest(

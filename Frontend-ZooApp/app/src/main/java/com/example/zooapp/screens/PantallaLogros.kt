@@ -1,7 +1,8 @@
-package com.example.zooapp
+package com.example.zooapp.screens
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.zooapp.SesionUsuario
 
 private data class ZonaLogro(
     val nombre: String,
@@ -97,7 +99,7 @@ fun PantallaLogros() {
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -182,7 +184,7 @@ private fun StampSello(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
@@ -247,7 +249,7 @@ private fun LogroEspecial(desbloqueado: Boolean) {
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(borderWidth, borderColor)
+        border = BorderStroke(borderWidth, borderColor)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

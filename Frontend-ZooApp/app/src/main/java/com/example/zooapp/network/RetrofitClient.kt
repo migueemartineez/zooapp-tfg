@@ -1,4 +1,4 @@
-package com.example.zooapp
+package com.example.zooapp.network
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

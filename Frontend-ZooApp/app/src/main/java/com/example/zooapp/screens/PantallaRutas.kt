@@ -1,4 +1,4 @@
-package com.example.zooapp
+package com.example.zooapp.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +9,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.zooapp.SesionUsuario
+import com.example.zooapp.model.Animal
+import com.example.zooapp.model.User
+import com.example.zooapp.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -115,7 +119,7 @@ fun PantallaRutas(navController: NavController, timestamp: Long) {
 
     LaunchedEffect(timestamp) {
         cargando = true
-        val id = SesionUsuario.usuario?._id
+        val id = SesionUsuario.usuario?.id
         if (id != null) {
             RetrofitClient.instance.obtenerUsuario(id)
                 .enqueue(object : Callback<User> {

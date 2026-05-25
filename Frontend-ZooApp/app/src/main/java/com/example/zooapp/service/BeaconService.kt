@@ -1,7 +1,13 @@
-package com.example.zooapp
+package com.example.zooapp.service
 
 import android.content.Context
-import org.altbeacon.beacon.*
+import android.content.Intent
+import android.content.ServiceConnection
+import com.example.zooapp.SesionUsuario
+import org.altbeacon.beacon.BeaconConsumer
+import org.altbeacon.beacon.BeaconManager
+import org.altbeacon.beacon.BeaconParser
+import org.altbeacon.beacon.Region
 
 class BeaconService(
     private val context: Context,
@@ -65,8 +71,8 @@ class BeaconService(
     }
 
     override fun getApplicationContext(): Context = context.applicationContext
-    override fun unbindService(connection: android.content.ServiceConnection) =
+    override fun unbindService(connection: ServiceConnection) =
         context.unbindService(connection)
-    override fun bindService(intent: android.content.Intent, connection: android.content.ServiceConnection, flags: Int) =
+    override fun bindService(intent: Intent, connection: ServiceConnection, flags: Int) =
         context.bindService(intent, connection, flags)
 }

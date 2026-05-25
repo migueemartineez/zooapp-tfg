@@ -1,7 +1,9 @@
-package com.example.zooapp
+package com.example.zooapp.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -11,6 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.zooapp.SesionUsuario
+import com.example.zooapp.model.Preferencias
+import com.example.zooapp.model.User
+import com.example.zooapp.network.PreferenciasRequest
+import com.example.zooapp.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -75,7 +82,7 @@ fun PantallaPerfil(navController: NavController) {
     val tiposAnimal = listOf("Mamíferos", "Reptiles", "Aves", "Animales acuáticos")
 
     LaunchedEffect(Unit) {
-        val id = usuario?._id
+        val id = usuario?.id
         if (id != null) {
             RetrofitClient.instance.obtenerUsuario(id)
                 .enqueue(object : Callback<User> {
@@ -173,7 +180,7 @@ fun PantallaPerfil(navController: NavController) {
 
             Button(
                 onClick = {
-                    val id = usuarioActualizado?._id ?: usuario?._id
+                    val id = usuarioActualizado?.id ?: usuario?.id
                     if (id != null) {
                         val preferenciasRequest = PreferenciasRequest(
                             preferencias = Preferencias(
@@ -252,12 +259,12 @@ fun PantallaPerfil(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        border = androidx.compose.foundation.BorderStroke(
+                        border = BorderStroke(
                             0.5.dp,
                             MaterialTheme.colorScheme.outlineVariant
                         )
