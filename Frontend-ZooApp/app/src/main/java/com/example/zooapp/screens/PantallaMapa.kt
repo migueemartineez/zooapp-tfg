@@ -97,6 +97,18 @@ fun PantallaMapa(zonaActual: String, navController: NavController) {
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
+
+                            // Pasar zonas ya visitadas al WebView
+                            val zonasVisitadas = SesionUsuario.usuario?.historialVisitas?.flatMap { visita ->
+                                (visita["zonasVisitadas"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                            }?.toSet() ?: emptySet()
+
+                            if (zonasVisitadas.isNotEmpty()) {
+                                val zonasJson = zonasVisitadas.joinToString(",", "[", "]") { "\"$it\"" }
+                                view?.evaluateJavascript("window.setZonasVisitadas($zonasJson);", null)
+                            }
+
+                            // Zona activa actual
                             if (zonaActual.isNotEmpty()) {
                                 view?.evaluateJavascript(
                                     "window.setZonaActiva('${zonaActual.replace("'", "\\'")}');",

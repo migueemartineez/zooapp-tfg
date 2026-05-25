@@ -109,13 +109,11 @@ fun calcularRuta(
 }
 
 @Composable
-fun PantallaRutas(navController: NavController, timestamp: Long) {
+fun PantallaRutas(navController: NavController, timestamp: Long, zonaActual: String) {
     var animales by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var cargando by remember { mutableStateOf(true) }
     var rutaOrdenada by remember { mutableStateOf<List<ZonaRuta>>(emptyList()) }
     var usuario by remember { mutableStateOf(SesionUsuario.usuario) }
-
-    val zonaActual = SesionUsuario.ultimaZonaGuardada
 
     LaunchedEffect(timestamp) {
         cargando = true

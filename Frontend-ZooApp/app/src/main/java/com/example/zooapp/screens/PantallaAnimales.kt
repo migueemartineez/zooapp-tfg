@@ -16,6 +16,10 @@ import com.example.zooapp.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 
 @Composable
 fun PantallaAnimales(navController: NavController) {
@@ -107,16 +111,30 @@ fun PantallaAnimales(navController: NavController) {
                             .padding(horizontal = 16.dp, vertical = 4.dp),
                         onClick = { navController.navigate("detalle/${animal.id}") }
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = animal.nombre,
-                                style = MaterialTheme.typography.titleSmall
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            AsyncImage(
+                                model = animal.imagen,
+                                contentDescription = animal.nombre,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(8.dp))
                             )
-                            Text(
-                                text = "${animal.tipoAnimal.replaceFirstChar { it.uppercase() }} · ${animal.ecosistema}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Column {
+                                Text(
+                                    text = animal.nombre,
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                Text(
+                                    text = "${animal.tipoAnimal.replaceFirstChar { it.uppercase() }} · ${animal.ecosistema}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }

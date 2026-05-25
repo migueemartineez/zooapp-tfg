@@ -17,7 +17,7 @@ class BeaconService(
     private lateinit var beaconManager: BeaconManager
     private val region = Region("zoo-region", null, null, null)
     private var ultimaDeteccion: Long = 0
-    private val timeWindowMillis = 5000L // Tiempo en ms
+    private val timeWindowMillis = 3000L // Tiempo en ms
 
     fun iniciar() {
         beaconManager = BeaconManager.getInstanceForApplication(context)

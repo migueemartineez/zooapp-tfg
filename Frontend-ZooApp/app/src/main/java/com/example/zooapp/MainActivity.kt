@@ -151,7 +151,8 @@ class MainActivity : ComponentActivity() {
                         composable("rutas") {
                             PantallaRutas(
                                 navController = navController,
-                                timestamp = SesionUsuario.rutasTimestamp
+                                timestamp = SesionUsuario.rutasTimestamp,
+                                zonaActual = zonaActual
                             )
                         }
                         composable("logros") {
