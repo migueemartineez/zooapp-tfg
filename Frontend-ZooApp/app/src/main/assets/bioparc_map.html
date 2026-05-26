@@ -478,16 +478,16 @@
 
         } else if (zonasDescubiertas.has(idZona)) {
             // Zona descubierta sin beacon → mostrar info pero SIN ver detalles
-            animalSeleccionado = animal.visto ? animal : null;
-            if (animal.imagen) {
+            animalSeleccionado = null;
+            if (animal.visto && animal.imagen) {
                 imgEl.innerHTML = '<img src="' + animal.imagen + '" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
             } else {
-                imgEl.textContent = '🐾';
+                imgEl.innerHTML = '?';
             }
             document.getElementById('card-nombre').textContent = animal.nombre;
             document.getElementById('card-zona-texto').textContent = zona.nombre;
-            cardBtn.style.display = animal.visto ? 'inline-block' : 'none';
-
+            cardBtn.style.display = 'none';
+            
         } else {
             // Zona no descubierta → misterioso
             animalSeleccionado = null;
