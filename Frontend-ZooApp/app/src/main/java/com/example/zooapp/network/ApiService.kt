@@ -3,7 +3,6 @@ package com.example.zooapp.network
 import com.example.zooapp.model.Animal
 import com.example.zooapp.model.Preferencias
 import com.example.zooapp.model.User
-import com.example.zooapp.model.Zona
 import retrofit2.Call
 import retrofit2.http.*
 
@@ -35,10 +34,6 @@ interface ApiService {
 
     @PUT("users/{id}/preferencias")
     fun actualizarPreferencias(@Path("id") id: String, @Body preferencias: PreferenciasRequest): Call<User>
-
-    // Zonas
-    @GET("zonas")
-    fun obtenerZonas(): Call<List<Zona>>
 
     // Animales
     @GET("animales")

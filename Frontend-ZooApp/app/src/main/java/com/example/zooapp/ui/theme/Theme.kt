@@ -1,8 +1,6 @@
 package com.example.zooapp.ui.theme
 
-import android.app.Activity
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -35,9 +33,8 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun ZooAppTheme(
-    darkTheme: Boolean = false, //isSystemInDarkTheme(), si lo quisiera en modo oscuro
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = false, //isSystemInDarkTheme(), Tema oscuro
+    dynamicColor: Boolean = true, // Dynamic color is available on Android 12+
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

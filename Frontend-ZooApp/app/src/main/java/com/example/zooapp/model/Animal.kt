@@ -13,7 +13,6 @@ data class Animal(
     val vida: String = "",
     val ecosistema: String,
     val tipoAnimal: String,
-    val interesTematico: List<String> = emptyList(),
     val imagen: String? = null,
     val zonaId: String
 )

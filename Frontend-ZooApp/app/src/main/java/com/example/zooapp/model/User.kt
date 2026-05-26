@@ -13,7 +13,6 @@ data class User(
     val email: String,
     val password: String,
     val preferencias: Preferencias = Preferencias(),
-    val logros: List<String> = emptyList(),
     val historialVisitas: List<Map<String, Any>> = emptyList(),
     val fechaRegistro: String? = null
 )

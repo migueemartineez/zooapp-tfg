@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.zooapp.SesionUsuario
 import com.example.zooapp.model.Animal
 import com.example.zooapp.model.User
@@ -121,7 +120,7 @@ fun calcularRuta(
 }
 
 @Composable
-fun PantallaRutas(navController: NavController, timestamp: Long, zonaActual: String) {
+fun PantallaRutas(timestamp: Long, zonaActual: String) {
     var animales by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var cargando by remember { mutableStateOf(true) }
     var rutaOrdenada by remember { mutableStateOf<List<ZonaRuta>>(emptyList()) }

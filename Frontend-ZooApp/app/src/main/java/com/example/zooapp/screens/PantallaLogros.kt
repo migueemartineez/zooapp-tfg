@@ -139,7 +139,7 @@ fun PantallaLogros() {
 
         // Grid de sellos
         val filas = ZONAS_ORDENADAS.chunked(2)
-        filas.forEachIndexed { filaIndex, fila ->
+        filas.forEachIndexed { _, fila ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)

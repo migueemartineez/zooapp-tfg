@@ -5,11 +5,9 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     preferencias: {
-        ecosistema: [String],
         tipoAnimal: [String],
         interesTematico: [String]
     },
-    logros: [String],
     historialVisitas: [{
         fecha: { type: Date, default: Date.now },
         zonasVisitadas: [String],

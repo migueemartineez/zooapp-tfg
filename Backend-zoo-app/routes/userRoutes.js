@@ -74,18 +74,4 @@ router.post('/:id/visita', async (req, res) => {
     }
 });
 
-// Añadir logro
-router.post('/:id/logro', async (req, res) => {
-    try {
-        const usuario = await User.findByIdAndUpdate(
-            req.params.id,
-            { $addToSet: { logros: req.body.logro } },
-            { new: true }
-        );
-        res.json(usuario);
-    } catch (error) {
-        res.status(500).json({ error: 'Error al añadir logro' });
-    }
-});
-
 module.exports = router;

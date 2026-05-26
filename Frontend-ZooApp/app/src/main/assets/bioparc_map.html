@@ -439,23 +439,6 @@
         }
     };
 
-    window.setAnimalIds = function(jsonData) {
-        try {
-            const data = JSON.parse(jsonData);
-            for (const zonaId in data) {
-                if (zonas[zonaId]) {
-                    data[zonaId].forEach((animal, i) => {
-                        if (zonas[zonaId].animales[i]) {
-                            zonas[zonaId].animales[i].id = animal.id || '';
-                        }
-                    });
-                }
-            }
-        } catch (e) {
-            console.error('Error parseando animales:', e);
-        }
-    };
-
     function seleccionarAnimal(idZona, indice) {
         const zona = zonas[idZona];
         const animal = zona.animales[indice];

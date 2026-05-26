@@ -16,7 +16,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Ruta básica de prueba
 app.get('/', (req, res) => {
-    res.send('¡Servidor ZooApp funcionando!');
+    res.send('SmartZoo API está funcionando correctamente');
 });
 
 // Rutas

@@ -3,7 +3,6 @@ package com.example.zooapp.service
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import com.example.zooapp.SesionUsuario
 import org.altbeacon.beacon.BeaconConsumer
 import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.BeaconParser
@@ -37,7 +36,6 @@ class BeaconService(
 
     fun detener() {
         beaconManager.unbind(this)
-        SesionUsuario.beaconIniciado = false
     }
 
     override fun onBeaconServiceConnect() {
