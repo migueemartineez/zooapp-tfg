@@ -184,7 +184,6 @@ fun PantallaPerfil(navController: NavController) {
                     if (id != null) {
                         val preferenciasRequest = PreferenciasRequest(
                             preferencias = Preferencias(
-                                ecosistema = emptyList(),
                                 tipoAnimal = tiposSeleccionados,
                                 interesTematico = if (especiesEnPeligro) listOf("Especies en peligro") else emptyList()
                             )

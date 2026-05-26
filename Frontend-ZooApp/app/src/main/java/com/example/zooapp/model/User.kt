@@ -2,7 +2,6 @@ package com.example.zooapp.model
 import com.google.gson.annotations.SerializedName
 
 data class Preferencias(
-    val ecosistema: List<String> = emptyList(),
     val tipoAnimal: List<String> = emptyList(),
     val interesTematico: List<String> = emptyList()
 )

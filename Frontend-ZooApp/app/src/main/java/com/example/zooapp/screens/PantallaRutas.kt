@@ -23,7 +23,8 @@ data class ZonaRuta(
     val orden: Int,
     val animales: List<Animal> = emptyList(),
     val puntuacion: Int = 0,
-    val yaVisitada: Boolean = false
+    val animalesVistosCuenta: Int = 0,
+    val totalAnimalesFavoritos: Int = 0
 )
 
 val zonasInfo = listOf(
@@ -34,7 +35,6 @@ val zonasInfo = listOf(
     ZonaRuta("6a00b8d716e824e0e606c8fd", "Centro y Sudamérica", 5)
 )
 
-// Mapeo de tipo favorito a tipos reales en BD
 fun mapearTipos(tipoFavorito: String): List<String> {
     return when (tipoFavorito) {
         "Mamíferos" -> listOf("mamífero")
@@ -52,8 +52,10 @@ fun calcularRuta(
 ): List<ZonaRuta> {
     val tiposFavoritos = usuario?.preferencias?.tipoAnimal ?: emptyList()
     val interesaEspeciesEnPeligro = usuario?.preferencias?.interesTematico?.contains("Especies en peligro") ?: false
-    val zonasVisitadas = usuario?.historialVisitas?.flatMap { visita ->
-        (visita["zonasVisitadas"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+
+    // Animales vistos individualmente (solo con beacon)
+    val animalesVistos = usuario?.historialVisitas?.flatMap { visita ->
+        (visita["animalesVistos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
     }?.toSet() ?: emptySet()
 
     if (tiposFavoritos.isEmpty()) return emptyList()
@@ -62,47 +64,57 @@ fun calcularRuta(
 
     val zonasConPuntuacion = zonasInfo.map { zona ->
         val animalesZona = animales.filter { it.zonaId == zona.id }
-        val yaVisitada = zona.nombre in zonasVisitadas
         var puntuacion = 0
 
         val animalesFavoritos = animalesZona.filter { animal ->
             tiposReales.any { it.equals(animal.tipoAnimal, ignoreCase = true) }
         }
 
-        if (animalesFavoritos.isNotEmpty()) puntuacion += 3
+        val animalesFavoritosNoVistos = animalesFavoritos.filter { it.nombre !in animalesVistos }
+        val animalesFavoritosVistos = animalesFavoritos.count { it.nombre in animalesVistos }
 
+        // Base: puntos por animales favoritos no vistos
+        puntuacion += animalesFavoritosNoVistos.size * 3
+
+        // Bonus por especies en peligro no vistas
         if (interesaEspeciesEnPeligro) {
-            puntuacion += animalesFavoritos.count { it.gradoAmenaza.contains("crítico", ignoreCase = true) } * 2
-            puntuacion += animalesFavoritos.count { it.gradoAmenaza.equals("En peligro", ignoreCase = true) } * 1
+            puntuacion += animalesFavoritosNoVistos.count { it.gradoAmenaza.contains("crítico", ignoreCase = true) } * 2
+            puntuacion += animalesFavoritosNoVistos.count { it.gradoAmenaza.equals("En peligro", ignoreCase = true) } * 1
         }
 
-        if (yaVisitada) puntuacion -= 5
+        // Penalización por animales ya vistos en esta zona
+        puntuacion -= animalesFavoritosVistos * 2
 
         zona.copy(
             animales = animalesZona,
             puntuacion = puntuacion,
-            yaVisitada = yaVisitada
+            animalesVistosCuenta = animalesFavoritosVistos,
+            totalAnimalesFavoritos = animalesFavoritos.size
         )
     }
 
-    // Filtrar zonas con animales favoritos y excluir la zona actual
+    // Filtrar zonas que tengan al menos un animal favorito no visto
     val zonasFiltradas = zonasConPuntuacion.filter { zona ->
-        zona.nombre != zonaActual &&
-                zona.animales.any { animal ->
-                    tiposReales.any { it.equals(animal.tipoAnimal, ignoreCase = true) }
-                }
+        val animalesFavoritosNoVistos = zona.animales.filter { animal ->
+            tiposReales.any { it.equals(animal.tipoAnimal, ignoreCase = true) } && animal.nombre !in animalesVistos
+        }
+        animalesFavoritosNoVistos.isNotEmpty()
     }
 
     return if (zonaActual.isNotEmpty()) {
         val ordenActual = zonasInfo.find { it.nombre == zonaActual }?.orden ?: 0
 
-        // Separar zonas en adelante y atrás según orden físico
-        val zonasAdelante = zonasFiltradas.filter { it.orden > ordenActual }
+        // Zona actual va primero si tiene animales no vistos
+        val zonaActualEnRuta = zonasFiltradas.find { it.nombre == zonaActual }
+        val zonasSinActual = zonasFiltradas.filter { it.nombre != zonaActual }
+
+        val zonasAdelante = zonasSinActual.filter { it.orden > ordenActual }
             .sortedWith(compareByDescending<ZonaRuta> { it.puntuacion }.thenBy { it.orden })
-        val zonasAtras = zonasFiltradas.filter { it.orden < ordenActual }
+        val zonasAtras = zonasSinActual.filter { it.orden < ordenActual }
             .sortedWith(compareByDescending<ZonaRuta> { it.puntuacion }.thenBy { it.orden })
 
-        zonasAdelante + zonasAtras
+        val rutaSinActual = zonasAdelante + zonasAtras
+        if (zonaActualEnRuta != null) listOf(zonaActualEnRuta) + rutaSinActual else rutaSinActual
     } else {
         zonasFiltradas.sortedWith(compareByDescending<ZonaRuta> { it.puntuacion }.thenBy { it.orden })
     }
@@ -114,6 +126,12 @@ fun PantallaRutas(navController: NavController, timestamp: Long, zonaActual: Str
     var cargando by remember { mutableStateOf(true) }
     var rutaOrdenada by remember { mutableStateOf<List<ZonaRuta>>(emptyList()) }
     var usuario by remember { mutableStateOf(SesionUsuario.usuario) }
+
+    val animalesVistos = remember(usuario) {
+        usuario?.historialVisitas?.flatMap { visita ->
+            (visita["animalesVistos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+        }?.toSet() ?: emptySet()
+    }
 
     LaunchedEffect(timestamp) {
         cargando = true
@@ -167,10 +185,10 @@ fun PantallaRutas(navController: NavController, timestamp: Long, zonaActual: Str
 
         if (zonaActual.isNotEmpty()) {
             Text(
-                text = "Estás en: $zonaActual",
+                text = "📡 Estás en: $zonaActual",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
 
@@ -188,13 +206,34 @@ fun PantallaRutas(navController: NavController, timestamp: Long, zonaActual: Str
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
+        } else if (rutaOrdenada.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Card(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "🎉 ¡Has visto todos los animales de tus zonas favoritas!",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 itemsIndexed(rutaOrdenada) { index, zona ->
+                    val esZonaActual = zona.nombre == zonaActual
+
+                    // Animales favoritos no vistos de esta zona
+                    val animalesNoVistos = zona.animales.filter { animal ->
+                        tiposReales.any { it.equals(animal.tipoAnimal, ignoreCase = true) } &&
+                                animal.nombre !in animalesVistos
+                    }
+
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        colors = if (esZonaActual) CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ) else CardDefaults.cardColors()
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -208,29 +247,39 @@ fun PantallaRutas(navController: NavController, timestamp: Long, zonaActual: Str
                             )
 
                             Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
                                     Text(
                                         text = zona.nombre,
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.weight(1f)
                                     )
-                                    if (zona.yaVisitada) {
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                    if (zona.totalAnimalesFavoritos > 0) {
                                         Text(
-                                            text = "✓ Visitada",
+                                            text = "${zona.animalesVistosCuenta}/${zona.totalAnimalesFavoritos} vistos",
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = if (zona.animalesVistosCuenta > 0)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                         )
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(4.dp))
-
-                                // Mostrar solo animales de los tipos favoritos
-                                val animalesDestacados = zona.animales.filter { animal ->
-                                    tiposReales.any { it.equals(animal.tipoAnimal, ignoreCase = true) }
+                                if (esZonaActual) {
+                                    Text(
+                                        text = "📡 Zona activa",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
                                 }
 
-                                animalesDestacados.forEach { animal ->
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                animalesNoVistos.forEach { animal ->
                                     Text(
                                         text = "• ${animal.nombre}",
                                         style = MaterialTheme.typography.bodySmall
