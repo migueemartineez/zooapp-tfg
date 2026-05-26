@@ -65,6 +65,13 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        // Despertar el servidor al arrancar
+        RetrofitClient.instance.obtenerAnimales()
+            .enqueue(object : Callback<List<Animal>> {
+                override fun onResponse(call: Call<List<Animal>>, response: Response<List<Animal>>) {}
+                override fun onFailure(call: Call<List<Animal>>, t: Throwable) {}
+            })
+
         setContent {
             ZooAppTheme {
                 var zonaActual by remember { mutableStateOf("") }
