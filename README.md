@@ -1,4 +1,4 @@
-# 🐾 ZooApp TFG
+# 🐾 SmartZoo TFG
 
 Aplicación Android para un zoológico inteligente usando Beacons BLE para ofrecer información contextual a los visitantes.
 
