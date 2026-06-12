@@ -41,8 +41,7 @@ class BeaconService(
     override fun onBeaconServiceConnect() {
         beaconManager.addRangeNotifier { beacons, _ ->
             if (beacons.isNotEmpty()) {
-                //val beacon = beacons.first() Version anterior: escogia el primer beacon detectado sin considerar proximidad
-                val beacon = beacons.maxByOrNull { it.rssi } ?: return@addRangeNotifier // Selecciona el beacon con mayor señal RSSI (más cercano físicamente)
+                val beacon = beacons.filter { it.rssi > -80 }.maxByOrNull { it.rssi } ?: return@addRangeNotifier
                 val major = beacon.id2.toInt()
                 val minor = beacon.id3.toInt()
                 val zona = when (Pair(major, minor)) {
